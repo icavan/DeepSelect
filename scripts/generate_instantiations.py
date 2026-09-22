@@ -47,7 +47,7 @@ class TopkSelectConfigs:
             assert not self.sorted_index, "`sorted_value` and `sorted_index` cannot be specified at the same time"
         if self.ValueT == "nv_bfloat16":
             assert not self.sorted_value, "`sorted_value` is fp32-only"
-        assert self.max_topk in [512, 1024, 4096]
+        assert self.max_topk in [512, 1024, 2048, 4096]
         assert self.elements_per_round == self.num_threads * 16, "contract ABI: B = NUM_THREADS * 16"
         assert self.reconstruct_threshold >= self.max_topk, "RECONSTRUCT_THRESHOLD >= MAX_TOPK"
         assert 1 <= self.cluster <= 16, "Invalid `cluster`"
@@ -135,6 +135,7 @@ def main(instantiation_dir: str):
         tuple_by_max_topk = {
             512: (512, 1, 8192, 4096, 3),
             1024: (512, 1, 8192, 4096, 3),
+            2048: (512, 1, 8192, 4096, 3),
             4096: (256, 1, 4096, 4096, 3),
         }
         configs = []
