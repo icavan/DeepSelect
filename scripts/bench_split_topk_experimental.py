@@ -16,11 +16,16 @@ SHAPES = [
     (1, 262144),
     (1, 524288),
     (1, 1048576),
+    (2, 1048576),
+    (4, 1048576),
     (8, 262144),
     (8, 1048576),
+    (16, 1048576),
     (32, 262144),
     (32, 1048576),
+    (64, 262144),
     (64, 1048576),
+    (128, 262144),
     (128, 1048576),
 ]
 
@@ -73,16 +78,26 @@ def bench(fn):
     return statistics.median(samples)
 
 
+def check_topk(x, indices, expected_values):
+    length = x.shape[1]
+    assert indices.dtype == torch.int32
+    assert bool(torch.all((indices >= 0) & (indices < length)))
+    sorted_indices = indices.sort(dim=1).values
+    assert bool(torch.all(sorted_indices[:, 1:] != sorted_indices[:, :-1]))
+    actual_values = x.gather(1, indices.long()).sort(dim=1).values
+    assert torch.equal(actual_values, expected_values)
+
+
 if __name__ == "__main__":
     torch.manual_seed(23)
     for batch, length in SHAPES:
         x = torch.randn((batch, length), device="cuda", dtype=torch.float32)
-        expected = torch.topk(x, K, dim=1).indices.to(torch.int32).sort(dim=1).values
-        assert torch.equal(single_cta(x).sort(dim=1).values, expected)
+        expected_values = torch.topk(x, K, dim=1).values.sort(dim=1).values
+        check_topk(x, single_cta(x), expected_values)
         print(batch, length, "single", f"{bench(lambda: single_cta(x)):.2f}")
         for parts in (4, 8, 16):
             if length // parts < K:
                 continue
             actual = split_row(x, parts)
-            assert torch.equal(actual.sort(dim=1).values, expected)
+            check_topk(x, actual, expected_values)
             print(batch, length, "split", parts, f"{bench(lambda: split_row(x, parts)):.2f}")
