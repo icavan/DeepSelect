@@ -4,6 +4,7 @@ Run with CUDA_VISIBLE_DEVICES set to the GPU under test. CUDA Graph capture
 amortizes Python launch overhead; warmup and capture are outside timed events.
 """
 
+import argparse
 import statistics
 
 import torch
@@ -19,6 +20,11 @@ SHAPES = [
     (32, 262144),
     (64, 1048576),
     (128, 1048576),
+]
+LARGE_BATCH_SHAPES = [
+    (512, 262144),
+    (1024, 262144),
+    (1024, 1048576),
 ]
 TOPK = 2048
 CAPTURED_CALLS = 32
@@ -61,7 +67,13 @@ def benchmark(batch: int, length: int) -> float:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--large-batch", action="store_true",
+        help="also measure query blocks representative of a 1024-row indexer slab",
+    )
+    args = parser.parse_args()
     torch.manual_seed(7)
     print("batch length median_us", flush=True)
-    for b, n in SHAPES:
+    for b, n in SHAPES + (LARGE_BATCH_SHAPES if args.large_batch else []):
         print(b, n, f"{benchmark(b, n):.2f}", flush=True)
