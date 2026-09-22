@@ -167,13 +167,13 @@ void topk(
         TORCH_CHECK(topk <= 4096, "topk must be <= 4096");
 
         INTEGER_TYPE_SWITCH(output_index_t, OutIdxT, [&]() {
-            //   topk <= 1024        -> 512t / B8192 / B2 4096 / TMA3
-            //   topk in (1024,2048] -> 512t / B8192 / B2 4096 / TMA2
+            //   topk <= 1024        -> 512t / 8192 elems per round / TMA3
+            //   topk in (1024,2048] -> 512t / 8192 elems per round / TMA2
             //   Two TMA buffers keep the larger 2048-candidate workspace within per-CTA shared memory.
-            //   topk in (2048,4096] -> 256t / B4096 / B2 4096 / TMA3 (correctness-only coverage tier)
+            //   topk in (2048,4096] -> 256t / 4096 elems per round / TMA3 (correctness-only coverage tier)
             auto dispatch = [&]<bool SORTED_VALUE, bool SORTED_INDEX, bool RETURN_VALUE>() {
-                auto launch = [&]<uint32_t MAX_TOPK, uint32_t NUM_THREADS, uint32_t B, uint32_t TMA_DEPTH = 3>() {
-                    topk_select_fp32::run_topk_select_kernel<TopkSelectConfig<float, OutIdxT, SORTED_VALUE, SORTED_INDEX, RETURN_VALUE, MAX_TOPK, NUM_THREADS, 1, B, 4096, TMA_DEPTH>>(args);
+                auto launch = [&]<uint32_t MAX_TOPK, uint32_t NUM_THREADS, uint32_t ELEMENTS_PER_ROUND, uint32_t TMA_DEPTH = 3>() {
+                    topk_select_fp32::run_topk_select_kernel<TopkSelectConfig<float, OutIdxT, SORTED_VALUE, SORTED_INDEX, RETURN_VALUE, MAX_TOPK, NUM_THREADS, 1, ELEMENTS_PER_ROUND, 4096, TMA_DEPTH>>(args);
                 };
                 if (topk <= 512) {
                     launch.template operator()<512, 512, 8192>();
