@@ -68,6 +68,20 @@ class FP32TopK2048Test(unittest.TestCase):
         )
         self.assertEqual(indices[0, 0].item(), 0x3F3F3F3F)
 
+    def test_tie_heavy_rows(self):
+        length = 32768
+        x = torch.zeros((2, length), device="cuda", dtype=torch.float32)
+        x[1, ::7] = 1.0
+        _, indices = deep_select.topk(
+            x, 2048, indices_type=torch.int32, return_value=False,
+        )
+        for row in range(2):
+            selected = indices[row].to(torch.int64)
+            self.assertTrue(torch.all((selected >= 0) & (selected < length)).item())
+            self.assertEqual(torch.unique(selected).numel(), 2048)
+            threshold = torch.topk(x[row], 2048).values[-1]
+            self.assertTrue(torch.all(x[row, selected] >= threshold).item())
+
 
 if __name__ == "__main__":
     unittest.main()
