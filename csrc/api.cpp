@@ -169,6 +169,7 @@ void topk(
         INTEGER_TYPE_SWITCH(output_index_t, OutIdxT, [&]() {
             //   topk <= 1024        -> 512t / B8192 / B2 4096 / TMA3
             //   topk in (1024,2048] -> 512t / B8192 / B2 4096 / TMA2
+            //   Two TMA buffers keep the larger 2048-candidate workspace within per-CTA shared memory.
             //   topk in (2048,4096] -> 256t / B4096 / B2 4096 / TMA3 (correctness-only coverage tier)
             auto dispatch = [&]<bool SORTED_VALUE, bool SORTED_INDEX, bool RETURN_VALUE>() {
                 auto launch = [&]<uint32_t MAX_TOPK, uint32_t NUM_THREADS, uint32_t B, uint32_t TMA_DEPTH = 3>() {
