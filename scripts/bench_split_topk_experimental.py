@@ -77,7 +77,8 @@ if __name__ == "__main__":
     torch.manual_seed(23)
     for batch, length in SHAPES:
         x = torch.randn((batch, length), device="cuda", dtype=torch.float32)
-        expected = single_cta(x).sort(dim=1).values
+        expected = torch.topk(x, K, dim=1).indices.to(torch.int32).sort(dim=1).values
+        assert torch.equal(single_cta(x).sort(dim=1).values, expected)
         print(batch, length, "single", f"{bench(lambda: single_cta(x)):.2f}")
         for parts in (4, 8, 16):
             if length // parts < K:
