@@ -14,7 +14,7 @@ class FP32TopK2048Test(unittest.TestCase):
         length = 65537
         # The visible width is deliberately unaligned; the row stride meets
         # the input alignment contract.
-        x = torch.randn((3, 65568), device="cuda", dtype=torch.float32)[:, :length]
+        x = torch.randn((3, 65792), device="cuda", dtype=torch.float32)[:, :length]
         x[1] = torch.arange(length, device="cuda", dtype=torch.float32)
 
         modes = [
