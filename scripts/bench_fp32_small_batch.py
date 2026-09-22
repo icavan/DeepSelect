@@ -1,4 +1,4 @@
-"""Reproducible FP32 K=2048 small-batch benchmark.
+"""Reproducible FP32 K=2048 benchmark, including optional large query blocks.
 
 Run with CUDA_VISIBLE_DEVICES set to the GPU under test. CUDA Graph capture
 amortizes Python launch overhead; warmup and capture are outside timed events.
@@ -74,6 +74,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     torch.manual_seed(7)
+    print(f"deep_select: {deep_select.__file__}", flush=True)
     print("batch length median_us", flush=True)
     for b, n in SHAPES + (LARGE_BATCH_SHAPES if args.large_batch else []):
         print(b, n, f"{benchmark(b, n):.2f}", flush=True)
